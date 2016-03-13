@@ -24,25 +24,19 @@
                 // The master archive object that will get returned
                 var archive = {};                                   
                 
-                // Populate the archive object from the RSS feed                
-                $.get('/rss/', function (data) {                    
-                    
-                    $(data).find("item").each(function () {
+                // Populate the archive object from the Ghost Public API
+                $.get(ghost.url.api('posts'), function (data) {                    
+                    for(var i=0;i < data.posts.length; i++) {                        
+                        var post = data.posts[i];
                         
-                        var pubDate = new Date($(this).find('pubDate').text());
+                        var pubDate = new Date(post.published_at);
                         
-                        var post = {
-                            title: $(this).find('title').text(),
-                            date: {
-                                day:pubDate.getDate(),
-                                weekday:_self.dayLookup[pubDate.getDay()],
-                                month:_self.monthLookup[pubDate.getMonth()],
-                                year: pubDate.getFullYear(),
-                                time: pubDate.getTime()
-                            },
-                            category: $(this).find('category').text(),
-                            link: $(this).find('link').text(),
-                            author: $(this).find('creator').text()
+                        post.date = {
+                            day:pubDate.getDate(),
+                            weekday:_self.dayLookup[pubDate.getDay()],
+                            month:_self.monthLookup[pubDate.getMonth()],
+                            year: pubDate.getFullYear(),
+                            time: pubDate.getTime()
                         };
                         
                         if(!archive.hasOwnProperty(post.date.year)){
@@ -58,7 +52,7 @@
                         }
                         
                         archive[post.date.year][post.date.month][post.date.day].push(post);
-                    });
+                    };
                     
                     console.log(archive);
                                         
@@ -77,11 +71,10 @@
                                                     
                             var $postList = $('<ul></ul>');
                             for(var day in archive[year][month]){
-                                for(var i=0;i<day.length;i++){
+                                for(var i=0;i<archive[year][month][day].length;i++){
                                     var $postElem = $('<li></li>');
-                                    
                                     var $postLink = $('<a>' + archive[year][month][day][i].title + '</a>');
-                                    $postLink.attr('href', archive[year][month][day][i].link);
+                                    $postLink.attr('href', archive[year][month][day][i].url);
                                     $postElem.append($postLink);
                                     
                                     $postList.prepend($postElem);    
@@ -100,7 +93,7 @@
                     $(_self.element).append($container);
                 })
                 .fail(function(){                    
-                    console.log('Error retrieving RSS feed.');  
+                    console.log('Error connecting to Ghost Public API. Have you enabled it in the Labs section of your blog?');  
                     return;
                 });
                 
